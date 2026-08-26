@@ -1,0 +1,15 @@
+{
+  "answer": "The quality of the image is {}.",
+  "dataset_params": {
+    "koniq": {
+      "split_json": "${ROOT_DATA}/KONIQ/metas/split.json",
+      "mos_json": "${ROOT_DATA}/KONIQ/metas/mos.json",
+      "save_train": "${ROOT_DATA}/koniq10k/metas/train_koniq_7k.json",
+      "save_test": "${ROOT_DATA}/KONIQ/metas/test_koniq_2k.generated.json",
+      "img_dir": "koniq10k/512x384",
+      "density_type": "pdf",
+      "thre_std": 0.2,
+      "thre_diff": 0.1
+    }
+  }
+}

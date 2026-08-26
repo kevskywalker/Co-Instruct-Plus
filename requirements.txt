@@ -1,0 +1,25 @@
+# Core training / eval (install PyTorch for your CUDA build first:
+#   https://pytorch.org/get-started/locally/ )
+accelerate>=0.33.0
+deepspeed>=0.14.0
+transformers>=4.57.0
+tokenizers>=0.20.0
+huggingface-hub>=0.26.0
+safetensors>=0.4.0
+peft>=0.13.0
+trl>=0.12.0
+datasets>=3.0.0
+einops>=0.8.0
+numpy>=1.26.0
+scipy>=1.11.0
+Pillow>=10.0.0
+pyyaml>=6.0
+ujson>=5.9.0
+tqdm>=4.66.0
+requests>=2.31.0
+qwen-vl-utils>=0.0.8
+
+# Optional
+bitsandbytes>=0.43.0
+liger-kernel>=0.5.0
+tensorboard>=2.14.0

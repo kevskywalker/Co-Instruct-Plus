@@ -1,0 +1,33 @@
+# Stage-2 DeQA score hyperparameters
+num_train_epochs: 1
+per_device_train_batch_size: 4
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 1
+learning_rate: 2.0e-5
+merger_lr: 2.0e-5
+vision_lr: 2.0e-6
+weight_decay: 0.0
+warmup_ratio: 0.03
+lr_scheduler_type: cosine
+logging_steps: 1
+save_strategy: steps
+save_steps: 4000
+save_total_limit: 1
+dataloader_num_workers: 4
+image_min_pixels: 196608
+image_max_pixels: 1310720
+seed: 42
+auto_resume: true
+deepspeed: configs/deepspeed/zero3.json
+master_port: 6689
+level_prefix: "The quality of the image is"
+level_names: [Excellent, Good, Fair, Poor, Bad]
+softkl_loss: true
+weight_rank: 1.0
+weight_softkl: 1.0
+weight_next_token: 0.05
+continuous_rating_loss: true
+closeset_rating_loss: true
+use_fix_std: true
+detach_pred_std: true
+prebuilt_pairs: true
