@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Co-Instruct-Plus"
+authors:
+  - name: "Co-Instruct-Plus Authors"
+version: "0.1.0"
+date-released: "2026-08-03"
+license: Apache-2.0
+repository-code: "https://github.com/"
+abstract: >-
+  Two-stage Qwen3-VL training (instruction SFT then DeQA-style quality score
+  training) for Co-Instruct-Plus.

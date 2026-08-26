@@ -1,0 +1,38 @@
+# Stage-2 DeQA score hyperparameters — KonIQ-only online pairing.
+# Ported from Co-Instruct++/qwen/scripts/train_qwen_koniq.sh (paper §3.2 protocol).
+#
+# Data is the KonIQ-10K official train split (~7046 images), not a frozen 8K pair
+# JSON. With prebuilt_pairs: false, PairDataset samples one partner per image
+# each epoch (~7046 dynamic pairs / epoch).
+num_train_epochs: 1
+per_device_train_batch_size: 4
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 1
+learning_rate: 2.0e-5
+merger_lr: 2.0e-5
+vision_lr: 2.0e-6
+weight_decay: 0.0
+warmup_ratio: 0.03
+lr_scheduler_type: cosine
+logging_steps: 1
+save_strategy: steps
+save_steps: 200
+save_total_limit: 1
+dataloader_num_workers: 4
+image_min_pixels: 196608
+image_max_pixels: 1310720
+seed: 42
+auto_resume: false
+deepspeed: configs/deepspeed/zero3.json
+master_port: 6692
+level_prefix: "The quality of the image is"
+level_names: [Excellent, Good, Fair, Poor, Bad]
+softkl_loss: true
+weight_rank: 1.0
+weight_softkl: 1.0
+weight_next_token: 0.05
+continuous_rating_loss: true
+closeset_rating_loss: true
+use_fix_std: true
+detach_pred_std: true
+prebuilt_pairs: false

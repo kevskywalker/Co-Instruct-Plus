@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "co-instruct-plus"
+version = "0.1.0"
+description = "Qwen3-VL two-stage training for Co-Instruct-Plus (SFT + DeQA score)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Co-Instruct-Plus Authors" }]
+dependencies = [
+  "accelerate>=0.33.0",
+  "transformers>=4.57.0",
+  "peft>=0.13.0",
+  "trl>=0.12.0",
+  "datasets>=3.0.0",
+  "einops>=0.8.0",
+  "numpy>=1.26.0",
+  "scipy>=1.11.0",
+  "Pillow>=10.0.0",
+  "pyyaml>=6.0",
+  "ujson>=5.9.0",
+  "tqdm>=4.66.0",
+  "requests>=2.31.0",
+  "qwen-vl-utils>=0.0.8",
+  "safetensors>=0.4.0",
+  "huggingface-hub>=0.26.0",
+]
+
+[project.optional-dependencies]
+train = ["deepspeed>=0.14.0", "bitsandbytes>=0.43.0", "tensorboard>=2.14.0"]
+
+# Training scripts set PYTHONPATH=qwen/src. Editable install puts that tree on sys.path.
+[tool.setuptools]
+package-dir = {"" = "qwen/src"}
+
+[tool.setuptools.packages.find]
+where = ["qwen/src"]
+include = ["dataset*", "train*", "trainer*", "model*", "loss*", "evaluate*", "serve*"]

@@ -1,0 +1,47 @@
+# Training outputs
+checkpoints/
+runs/
+wandb/
+outputs/
+results/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Large local annotations (host on HF / Zenodo; see scripts/download_annotations.sh)
+training_jsons/*.json
+pairs/*.json
+data/annotations/*.json
+!data/annotations/README.md
+!data/samples/**
+
+# Local secrets / machine env
+.env
+configs/env.local.sh
+scripts/env.local.sh
+env.local.sh
+secrets/.env
+secrets/*.key
+secrets/*token*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+logs/

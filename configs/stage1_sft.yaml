@@ -1,0 +1,20 @@
+# Stage-1 SFT hyperparameters (consumed by scripts/finetune_stage1.sh / qwen/scripts/finetune.sh)
+num_train_epochs: 1
+global_batch_size: 128
+batch_per_device: 4
+learning_rate: 1.0e-5
+merger_lr: 1.0e-5
+vision_lr: 2.0e-6
+weight_decay: 0.1
+warmup_ratio: 0.03
+lr_scheduler_type: cosine
+logging_steps: 1
+save_strategy: steps
+save_steps: 1000
+save_total_limit: 1
+dataloader_num_workers: 8
+image_min_pixels: 524288   # 512 * 32 * 32
+image_max_pixels: 1310720  # 1280 * 32 * 32
+seed: 42
+deepspeed: configs/deepspeed/zero2.json
+master_port: 6690

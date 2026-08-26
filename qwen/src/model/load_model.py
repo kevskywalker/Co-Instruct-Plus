@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+from typing import Any
+
+from transformers import AutoConfig, PretrainedConfig
+
+try:
+    from transformers import AutoModelForImageTextToText
+except ImportError:
+    from transformers import AutoModelForVision2Seq as AutoModelForImageTextToText
+
+from train.monkey_patch_forward import (
+    replace_qwen2_5_with_mixed_modality_forward,
+    replace_qwen3_vl_moe_with_mixed_modality_forward,
+    replace_qwen3_with_mixed_modality_forward,
+    replace_qwen_2_with_mixed_modality_forward,
+    _HAS_QWEN3_5 as _HAS_QWEN3_5_PATCH,
+)
+
+if _HAS_QWEN3_5_PATCH:
+    from train.monkey_patch_forward import (
+        replace_qwen3_5_moe_with_mixed_modality_forward,
+        replace_qwen3_5_with_mixed_modality_forward,
+    )
+
+from train.monkey_patch_vision import replace_qwen2_5_vision
+
+_GENERATION_MODEL_TYPES = {
+    "qwen2_vl",
+    "qwen2_5_vl",
+    "qwen3_vl",
+    "qwen3_vl_moe",
+}
+if _HAS_QWEN3_5_PATCH:
+    _GENERATION_MODEL_TYPES |= {"qwen3_5", "qwen3_5_moe"}
+
+_PATCHERS = {
+    "qwen2_vl": (replace_qwen_2_with_mixed_modality_forward,),
+    "qwen2_5_vl": (
+        replace_qwen2_5_with_mixed_modality_forward,
+        replace_qwen2_5_vision,
+    ),
+    "qwen3_vl": (),  # native forward is compatible with this transformers version
+    "qwen3_vl_moe": (replace_qwen3_vl_moe_with_mixed_modality_forward,),
+}
+if _HAS_QWEN3_5_PATCH:
+    _PATCHERS["qwen3_5"] = (replace_qwen3_5_with_mixed_modality_forward,)
+    _PATCHERS["qwen3_5_moe"] = (replace_qwen3_5_moe_with_mixed_modality_forward,)
+
+
+def get_qwen_vl_generation_backbone(model):
+    if not hasattr(model, "model"):
+        raise TypeError(f"Unsupported generation model wrapper: {type(model)!r}")
+    return model.model
+
+
+def apply_qwen_vl_monkey_patches(model_type: str) -> str:
+    try:
+        patchers = _PATCHERS[model_type]
+    except KeyError as exc:
+        supported = ", ".join(sorted(_PATCHERS))
+        raise ValueError(f"Unsupported Qwen-VL model_type: {model_type}. Supported: {supported}") from exc
+
+    for patcher in patchers:
+        patcher()
+
+    return model_type
+
+
+def load_qwen_vl_generation_model(
+    model_name_or_path: str, *, config: PretrainedConfig | None = None, **kwargs: Any
+):
+    if config is None:
+        config = AutoConfig.from_pretrained(model_name_or_path)
+    if config.model_type not in _GENERATION_MODEL_TYPES:
+        supported = ", ".join(sorted(_GENERATION_MODEL_TYPES))
+        raise ValueError(
+            f"Unsupported Qwen-VL generation model_type: {config.model_type}. Supported: {supported}"
+        )
+
+    apply_qwen_vl_monkey_patches(config.model_type)
+    return AutoModelForImageTextToText.from_pretrained(
+        model_name_or_path,
+        config=config,
+        **kwargs,
+    )

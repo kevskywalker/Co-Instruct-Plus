@@ -1,0 +1,21 @@
+# Stage-1 multi-dataset mix. Paths are relative to ANNOTATIONS_DIR
+# (or the directory that contains these JSON files).
+datasets:
+  - json_path: m2c_coarse_general_textonly.json
+    sampling_strategy: "all"
+  - json_path: m2c_coarse_mcq_textonly.json
+    sampling_strategy: "all"
+  - json_path: m2c_fine_general_textonly.json
+    sampling_strategy: "all"
+  - json_path: m2c_fine_mcq_textonly.json
+    sampling_strategy: "all"
+  - json_path: t2c_coarse_general.json
+    sampling_strategy: "all"
+  - json_path: t2c_coarse_mcq.json
+    sampling_strategy: "all"
+  - json_path: t2c_fine_general.json
+    sampling_strategy: "all"
+  - json_path: t2c_fine_mcq.json
+    sampling_strategy: "all"
+  - json_path: coinstruct_562k_t2c.json
+    sampling_strategy: "all"
