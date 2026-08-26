@@ -244,7 +244,7 @@ def qwen3_vl_moe_mixed_modality_forward(
         dummy_deepstack = _get_deepstack_features(image_outputs)
         image_embeds = _flatten_vision_features(image_outputs).to(inputs_embeds.device, inputs_embeds.dtype)
         
-        inputs_embeds += image_embeds.mean() * 0
+        inputs_embeds = inputs_embeds + image_embeds.mean() * 0
 
     if pixel_values is not None:
         image_outputs = self.get_image_features(pixel_values, image_grid_thw, return_dict=True)
@@ -362,7 +362,7 @@ def qwen3_vl_mixed_modality_forward(
         dummy_deepstack = _get_deepstack_features(image_outputs)
         image_embeds = _flatten_vision_features(image_outputs).to(inputs_embeds.device, inputs_embeds.dtype)
         
-        inputs_embeds += image_embeds.mean() * 0
+        inputs_embeds = inputs_embeds + image_embeds.mean() * 0
 
     if pixel_values is not None:
         image_outputs = self.get_image_features(pixel_values, image_grid_thw, return_dict=True)
@@ -492,7 +492,7 @@ def qwen2_5_mixed_modality_forward(
         # However the values are all zeros so it dosen't affect the embeddings.
         # This could avoid deepspeed error when some batch only has texts.
         image_embeds = _flatten_vision_features(image_embeds)
-        inputs_embeds += image_embeds.mean() * 0
+        inputs_embeds = inputs_embeds + image_embeds.mean() * 0
 
     if pixel_values is not None:
         image_embeds = self.get_image_features(pixel_values, image_grid_thw, return_dict=True)
@@ -595,7 +595,7 @@ def qwen2_mixed_modality_forward(
         # However the values are all zeros so it dosen't affect the embeddings.
         # This could avoid deepspeed error when some batch only has texts.
         image_embeds = _flatten_vision_features(image_embeds)
-        inputs_embeds += image_embeds.mean() * 0
+        inputs_embeds = inputs_embeds + image_embeds.mean() * 0
 
     if pixel_values is not None:
         image_embeds = self.get_image_features(pixel_values, image_grid_thw, return_dict=True)
