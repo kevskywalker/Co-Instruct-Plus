@@ -230,6 +230,10 @@ def train():
     else:
         trainer.train()
 
+    if training_args.skip_final_model_save:
+        rank0_print("Skipping final trainer state and model save for connectivity test.")
+        return
+
     trainer.save_state()
 
     model.config.use_cache = True

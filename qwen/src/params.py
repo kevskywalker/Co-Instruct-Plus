@@ -177,6 +177,10 @@ class TrainingArguments(HFTrainingArguments):
     detach_pred_std: bool = field(default=False, metadata={"help": "Detach predicted std in rating loss."})
     auto_resume: bool = field(default=False, metadata={"help": "Automatically resume from latest valid checkpoint in output_dir."})
     group_by_modality_length: bool = field(default=False, metadata={"help": "Group samples by modality length for batching."})
+    skip_final_model_save: bool = field(
+        default=False,
+        metadata={"help": "Skip final trainer/model writes; intended for connectivity tests."},
+    )
 
 @dataclass
 class DPOArguments(DPOConfigTRL):
