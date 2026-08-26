@@ -1,0 +1,14 @@
+# Small mixed-modality fixture for distributed connectivity tests.
+# It intentionally includes text-only M2C and image-grounded T2C samples,
+# including split MCQs, while avoiding the full 834K-example load.
+datasets:
+  - json_path: m2c_coarse_general_textonly.json
+    sampling_strategy: "first:32"
+  - json_path: m2c_coarse_mcq_textonly.json
+    sampling_strategy: "first:16"
+    split_mcq: true
+  - json_path: t2c_coarse_general.json
+    sampling_strategy: "first:32"
+  - json_path: t2c_coarse_mcq.json
+    sampling_strategy: "first:16"
+    split_mcq: true
