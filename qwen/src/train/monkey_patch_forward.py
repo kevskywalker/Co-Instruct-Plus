@@ -99,7 +99,9 @@ def _qwen3_5_mixed_modality_forward_impl(
         dummy_pixel, dummy_grid = _make_dummy_qwen3_visual_inputs(self.visual)
         image_outputs = self.get_image_features(dummy_pixel, dummy_grid, return_dict=True)
         image_embeds = _flatten_vision_features(image_outputs).to(inputs_embeds.device, inputs_embeds.dtype)
-        inputs_embeds += image_embeds.mean() * 0
+        # ``inputs_embeds`` can be a leaf tensor when gradient checkpointing
+        # enables input gradients, so this must remain out-of-place.
+        inputs_embeds = inputs_embeds + image_embeds.mean() * 0
 
     if pixel_values is not None:
         image_outputs = self.get_image_features(pixel_values, image_grid_thw, return_dict=True)
