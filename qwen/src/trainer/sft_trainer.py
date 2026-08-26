@@ -135,17 +135,18 @@ class QwenSFTTrainer(Trainer):
         # processing_class is set by parent Trainer from the constructor argument
         # We can access it via self.processing_class (same as processor)
 
-    def _get_train_sampler(self):
+    def _get_train_sampler(self, train_dataset=None):
         if not self.args.group_by_modality_length:
-            return super()._get_train_sampler()
-        if self.train_dataset is None or not has_length(self.train_dataset):
+            return super()._get_train_sampler(train_dataset)
+        train_dataset = train_dataset if train_dataset is not None else self.train_dataset
+        if train_dataset is None or not has_length(train_dataset):
             return None
-        if not hasattr(self.train_dataset, "modality_lengths"):
+        if not hasattr(train_dataset, "modality_lengths"):
             raise ValueError("group_by_modality_length requires dataset.modality_lengths")
         return ModalityLengthGroupedSampler(
             batch_size=self.args.train_batch_size,
             world_size=self.args.world_size * self.args.gradient_accumulation_steps,
-            lengths=self.train_dataset.modality_lengths,
+            lengths=train_dataset.modality_lengths,
         )
 
     def create_optimizer(self):
