@@ -1,5 +1,8 @@
 import copy
+import json as std_json
 import os
+import re
+import sys
 from typing import Dict
 import torch
 import transformers
@@ -82,6 +85,62 @@ class SupervisedDataset(Dataset):
             )
 
     @staticmethod
+    def _extract_mcq_payload(text, item_key):
+        """Extract the first JSON list containing the requested MCQ objects."""
+        decoder = std_json.JSONDecoder()
+        for match in re.finditer(r"\[", text):
+            try:
+                payload, _ = decoder.raw_decode(text[match.start():])
+            except (ValueError, TypeError):
+                continue
+            if (
+                isinstance(payload, list)
+                and payload
+                and all(isinstance(item, dict) for item in payload)
+                and all(item_key in item for item in payload)
+            ):
+                return text[: match.start()], payload
+        return None, None
+
+    @classmethod
+    def _split_mcq_record(cls, record):
+        """Turn one multi-question MCQ record into one record per question."""
+        conversations = record.get("conversations", [])
+        if len(conversations) < 2:
+            return [record]
+
+        prompt_prefix, questions = cls._extract_mcq_payload(
+            conversations[0].get("value", ""), "question"
+        )
+        answer_prefix, answers = cls._extract_mcq_payload(
+            conversations[1].get("value", ""), "correct_option"
+        )
+        if questions is None or answers is None:
+            return [record]
+        if len(questions) != len(answers):
+            print(
+                f"[warning] MCQ question/answer count mismatch for {record.get('id', '<unnamed>')}: "
+                f"{len(questions)} questions vs {len(answers)} answers; "
+                f"keeping the first {min(len(questions), len(answers))} matched pairs",
+                file=sys.stderr,
+            )
+
+        split_records = []
+        for index, (question, answer) in enumerate(zip(questions, answers)):
+            item = copy.deepcopy(record)
+            if "id" in item:
+                item["id"] = f"{item['id']}#mcq-{index}"
+            item["conversations"] = copy.deepcopy(conversations)
+            item["conversations"][0]["value"] = (
+                prompt_prefix + json.dumps([question], ensure_ascii=False)
+            )
+            item["conversations"][1]["value"] = (
+                answer_prefix + json.dumps([answer], ensure_ascii=False)
+            )
+            split_records.append(item)
+        return split_records
+
+    @staticmethod
     def _load_yaml_datasets(yaml_path):
         """Load multiple datasets from a YAML config, following LLaVA-NeXT format."""
         with open(yaml_path, "r") as f:
@@ -90,11 +149,20 @@ class SupervisedDataset(Dataset):
         all_data = []
         seed = int(os.environ.get("COINSTRUCT_SEED", "42"))
         for ds in cfg.get("datasets", []):
-            json_path = resolve_annotation_json(ds["json_path"], yaml_path)
             sampling = ds.get("sampling_strategy", "all")
+            if sampling in {"ignore", "none"}:
+                continue
+
+            json_path = resolve_annotation_json(ds["json_path"], yaml_path)
 
             with open(json_path, "r") as jf:
                 data = json.load(jf)
+
+            if ds.get("split_mcq", False):
+                split_data = []
+                for record in data:
+                    split_data.extend(SupervisedDataset._split_mcq_record(record))
+                data = split_data
 
             if sampling == "all":
                 all_data.extend(data)
@@ -109,6 +177,8 @@ class SupervisedDataset(Dataset):
                 n = int(sampling.split(":")[1])
                 rng = random.Random(seed)
                 all_data.extend(rng.sample(data, min(n, len(data))))
+            else:
+                raise ValueError(f"Unknown sampling_strategy {sampling!r} in {yaml_path}")
 
         return all_data
 

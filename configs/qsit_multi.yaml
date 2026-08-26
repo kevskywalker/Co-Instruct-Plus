@@ -5,17 +5,22 @@ datasets:
     sampling_strategy: "all"
   - json_path: m2c_coarse_mcq_textonly.json
     sampling_strategy: "all"
+    split_mcq: true
   - json_path: m2c_fine_general_textonly.json
     sampling_strategy: "all"
   - json_path: m2c_fine_mcq_textonly.json
     sampling_strategy: "all"
+    split_mcq: true
   - json_path: t2c_coarse_general.json
     sampling_strategy: "all"
   - json_path: t2c_coarse_mcq.json
     sampling_strategy: "all"
+    split_mcq: true
   - json_path: t2c_fine_general.json
     sampling_strategy: "all"
   - json_path: t2c_fine_mcq.json
     sampling_strategy: "all"
+    split_mcq: true
   - json_path: coinstruct_562k_t2c.json
-    sampling_strategy: "all"
+    # Disabled for this SFT run.
+    sampling_strategy: "ignore"
