@@ -19,7 +19,7 @@ from transformers.pytorch_utils import (
     ALL_LAYERNORM_LAYERS
 )
 from transformers.trainer_utils import EvalLoopOutput
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Sampler
 from train.train_utils import get_peft_state_maybe_zero_3, get_peft_state_non_lora_maybe_zero_3
 
 from constants import IGNORE_INDEX
@@ -47,12 +47,106 @@ class GenerativeEvalPrediction:
     references: List[str]
 
 
+def _split_to_even_chunks(indices, lengths, num_chunks):
+    if len(indices) % num_chunks != 0:
+        return [indices[i::num_chunks] for i in range(num_chunks)]
+
+    chunk_size = len(indices) // num_chunks
+    chunks = [[] for _ in range(num_chunks)]
+    chunk_lengths = [0 for _ in range(num_chunks)]
+    for index in indices:
+        shortest = chunk_lengths.index(min(chunk_lengths))
+        chunks[shortest].append(index)
+        chunk_lengths[shortest] += lengths[index]
+        if len(chunks[shortest]) == chunk_size:
+            chunk_lengths[shortest] = float("inf")
+    return chunks
+
+
+def _length_grouped_indices(lengths, batch_size, world_size, generator=None):
+    indices = torch.randperm(len(lengths), generator=generator).tolist()
+    megabatch_size = world_size * batch_size
+    megabatches = [indices[i : i + megabatch_size] for i in range(0, len(indices), megabatch_size)]
+    megabatches = [sorted(megabatch, key=lambda index: lengths[index], reverse=True) for megabatch in megabatches]
+    megabatches = [_split_to_even_chunks(megabatch, lengths, world_size) for megabatch in megabatches]
+    return [index for megabatch in megabatches for batch in megabatch for index in batch]
+
+
+def _modality_length_grouped_indices(lengths, batch_size, world_size, generator=None):
+    if not lengths or all(length > 0 for length in lengths) or all(length < 0 for length in lengths):
+        return _length_grouped_indices(lengths, batch_size, world_size, generator=generator)
+
+    multimodal_indices, multimodal_lengths = zip(*((i, length) for i, length in enumerate(lengths) if length > 0))
+    text_indices, text_lengths = zip(*((i, -length) for i, length in enumerate(lengths) if length < 0))
+    multimodal_order = _length_grouped_indices(multimodal_lengths, batch_size, world_size)
+    text_order = _length_grouped_indices(text_lengths, batch_size, world_size)
+    multimodal_order = [multimodal_indices[i] for i in multimodal_order]
+    text_order = [text_indices[i] for i in text_order]
+
+    megabatch_size = world_size * batch_size
+    multimodal_megabatches = [
+        multimodal_order[i : i + megabatch_size] for i in range(0, len(multimodal_order), megabatch_size)
+    ]
+    text_megabatches = [text_order[i : i + megabatch_size] for i in range(0, len(text_order), megabatch_size)]
+
+    # Keep complete megabatches modality-homogeneous.  Only incomplete tails
+    # are combined, and that combined remainder is placed last.
+    remainder = []
+    if multimodal_megabatches and len(multimodal_megabatches[-1]) < megabatch_size:
+        remainder.extend(multimodal_megabatches.pop())
+    if text_megabatches and len(text_megabatches[-1]) < megabatch_size:
+        remainder.extend(text_megabatches.pop())
+    megabatches = multimodal_megabatches + text_megabatches
+    if megabatches:
+        order = torch.randperm(len(megabatches), generator=generator).tolist()
+        megabatches = [megabatches[i] for i in order]
+    if remainder:
+        megabatches.append(sorted(remainder))
+    return [index for megabatch in megabatches for index in megabatch]
+
+
+class ModalityLengthGroupedSampler(Sampler):
+    def __init__(self, batch_size, world_size, lengths, generator=None):
+        if not lengths:
+            raise ValueError("Lengths must be non-empty for modality-aware sampling.")
+        self.batch_size = batch_size
+        self.world_size = world_size
+        self.lengths = lengths
+        self.generator = generator
+
+    def __len__(self):
+        return len(self.lengths)
+
+    def __iter__(self):
+        return iter(
+            _modality_length_grouped_indices(
+                self.lengths,
+                self.batch_size,
+                self.world_size,
+                generator=self.generator,
+            )
+        )
+
+
 class QwenSFTTrainer(Trainer):
 
     def __init__(self, *args, **kwargs):
         super(QwenSFTTrainer, self).__init__(*args, **kwargs)
         # processing_class is set by parent Trainer from the constructor argument
         # We can access it via self.processing_class (same as processor)
+
+    def _get_train_sampler(self):
+        if not self.args.group_by_modality_length:
+            return super()._get_train_sampler()
+        if self.train_dataset is None or not has_length(self.train_dataset):
+            return None
+        if not hasattr(self.train_dataset, "modality_lengths"):
+            raise ValueError("group_by_modality_length requires dataset.modality_lengths")
+        return ModalityLengthGroupedSampler(
+            batch_size=self.args.train_batch_size,
+            world_size=self.args.world_size * self.args.gradient_accumulation_steps,
+            lengths=self.train_dataset.modality_lengths,
+        )
 
     def create_optimizer(self):
         """

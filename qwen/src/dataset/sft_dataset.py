@@ -185,6 +185,25 @@ class SupervisedDataset(Dataset):
     def __len__(self):
         return len(self.list_data_dict)
 
+    @property
+    def modality_lengths(self):
+        """Signed approximate lengths for modality-aware distributed sampling.
+
+        Positive values denote image/video samples and negative values denote
+        text-only samples.  Keeping modalities in separate distributed
+        megabatches prevents ranks from taking different conditional forward
+        paths in the same gradient-accumulation window.
+        """
+        lengths = []
+        for sample in self.list_data_dict:
+            text_length = sum(
+                len(str(turn.get("value", "")).split())
+                for turn in sample.get("conversations", [])
+            )
+            text_length = max(text_length, 1)
+            lengths.append(text_length if ("image" in sample or "video" in sample) else -text_length)
+        return lengths
+
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         sources = self.list_data_dict[i]
 
