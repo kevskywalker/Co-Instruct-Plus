@@ -40,7 +40,11 @@ _PATCHERS = {
         replace_qwen2_5_with_mixed_modality_forward,
         replace_qwen2_5_vision,
     ),
-    "qwen3_vl": (),  # native forward is compatible with this transformers version
+    # Keep the vision graph connected for text-only batches.  The native
+    # Transformers forward skips the visual tower when ``pixel_values`` is
+    # absent, which makes different distributed ranks use different parameter
+    # sets when text-only and image samples are mixed.
+    "qwen3_vl": (replace_qwen3_with_mixed_modality_forward,),
     "qwen3_vl_moe": (replace_qwen3_vl_moe_with_mixed_modality_forward,),
 }
 if _HAS_QWEN3_5_PATCH:
