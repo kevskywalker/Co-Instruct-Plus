@@ -58,6 +58,22 @@ MODEL_PATH=checkpoints/stage2_score_koniq \
 Checkpoints, datasets, predictions, and logs are local outputs and are not
 part of this Git repository.
 
+## MICBench-v2
+
+Scalar-IQA testing remains available through `test_stage1.sh` and
+`test_stage2.sh`. To test either checkpoint on MICBench-v2, download and
+extract `micbench/micbench-test.zip` from the release dataset, then run:
+
+```bash
+export MICBENCH_ANNOTATION=/path/to/micbench_v2_1998.json
+export MICBENCH_IMAGE_ROOT=/path/to/MICBench_test/images
+
+MODEL_PATH=checkpoints/stage1_qsit_sft bash scripts/test_micbench_v2.sh
+
+# Or evaluate the Stage-II checkpoint.
+MODEL_PATH=checkpoints/stage2_score_koniq bash scripts/test_micbench_v2.sh
+```
+
 ## License
 
 Code is released under [Apache-2.0](LICENSE). Models and datasets retain their
