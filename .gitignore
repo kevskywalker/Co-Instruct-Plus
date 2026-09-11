@@ -4,6 +4,8 @@ runs/
 wandb/
 outputs/
 results/
+eval_outputs/
+inference-checkpoint-*/
 *.safetensors
 *.bin
 *.pt
