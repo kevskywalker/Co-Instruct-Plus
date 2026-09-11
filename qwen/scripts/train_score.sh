@@ -22,7 +22,9 @@ export COINSTRUCT_SEED=${COINSTRUCT_SEED:-42}
 
 cd "${QWEN_ROOT}"
 
-MODEL=${MODEL:-${OUTPUT_DIR:-${PKG_ROOT}/checkpoints/stage1_qsit_sft}}
+# STAGE2_MODEL is an explicit per-run override that is not shadowed by the
+# machine-local MODEL value loaded from configs/env.local.sh.
+MODEL=${STAGE2_MODEL:-${MODEL:-${OUTPUT_DIR:-${PKG_ROOT}/checkpoints/stage1_qsit_sft}}}
 MODEL=${MODEL%/}
 PYTHON_BIN=${PYTHON_BIN:-python}
 

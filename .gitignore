@@ -1,3 +1,6 @@
+# Local paper drafts and audit notes are not part of the public release.
+draft/
+
 # Training outputs
 checkpoints/
 runs/
